@@ -1,0 +1,116 @@
+/* Bompa Remus 325CB */
+- Pentru implementarea temei, am aplicat parcurgerea pe latime BFS si m-am folosit de predicatele:
+*) getColor/3 (G,N,C)
+    -primeste ca parametri: graficul G (reprezentat printr-o pereche noduri si muchii [V|E]), nodul
+    N caruia se doreste sa i se afle culoarea si variabila C, care se va instantia cu atomul culorii
+    nodului N din graful G.
+    -apeleaza predicatul getColor2/3(V,N,C), in care ultimii doi parametri sunt aceiasi ca la getColor/3
+    iar primul este multimea de noduri ale grafului. Predicatul intoarce true, intoarce culoarea nodului
+    N in C si nu mai continua daca primul element al lui V este de forma [N|C] (daca este nodul N) iar in
+    caz contrar continua cautarea la urmatorul element trimitand tail-ul lui V ca prim parametru.
+
+*) contains/2 (E,L) 
+    -primeste ca parametri un element E si o lista L
+    -verifica daca elementul E este continut in lista L
+    -in cazul in care lista L inepe cu elementul E, se intoarce true si se continua cautarea in lista iar
+    in caz contrar, se continua cautarea in lista, predicatul apelandu-se recursiv cu tail-ul lui L ca prim
+    parametru
+
+*) edge/5 (X,Y,G,LastPath,Visited)
+    -primeste ca parametri: nodul sursa X, nodul destinatie Y, graful G, in care se cauta muchia [X,Y],
+    o cale (lista) LastPath, obtinuta prin bfs, si in care se pune Y (deci Y nu trebuie sa se afle printre
+    elementele lui LastPath, caci in caz contrar LastPath nu ar mai fi o parcurgere bfs), si o lista de
+    noduri deja vizitate in cadrul etapei de explorare a vecinilor nodului extras din coada, din bfs (deci
+    Y nu trebuie sa se afle nici printre elementele lui Visited) 
+    -predicatul cauta muchiile [X,Y] din graful G (contains([X,Y], E)), care nu apartin reuniunii R a
+    elementelor listelor: LastPath si Visited (append(LastPath,Visited,R))
+
+*) lastTerm/3 (L,B,M)
+    -primeste ca parametri: o variabila L care se instantiaza la ultimul element din lista data ca al 
+    treilea argument: M, o variabile B, care se instantiaza la restul listei, mai putin ultimul element
+    si lista M
+    -intoarce ultimul element al listei M in L si restul listei in B
+
+*) getPath/5 (From,To,Graph,Formula,Path)
+    -predicatul principal al programului, care se cere implementat in cerinta
+    -primeste 5 parametri: nodul sursa From, nodul destinatie To, graful Graph in care se cauta cea mai 
+    scurta cale de la From la To, formula Formula care trbuie respectata de cea mai scurta cale si o
+    variabila Path in care se salveaza calea gasita.
+    -predicatul intoarce in Path calea cea mai scurta de la nodul From la To din Graph, care respecta
+    formula Formula 
+    -se apeleaza bfs/4 pe graficul Graph, coada de path-uri initiala: [[From]], nodul final To si variabila
+    in care se salveaza toate drumurile de la From la To: Paths. Apoi, se apeleaza predicatul search/4 
+    (care cauta in lista de cai posibile gasite: Paths, prima cale (deci cea mai scurta), care satisface
+    formula Formula) cu parametrii: graficul Graph pe care se lucreaza, formula Formula care trebuie 
+    indeplinita, lista de cai Paths obtinutaa din bfs si o variabila Path care se instantiaza la calea 
+    gasita: cea mai scurta si care respecta Formula
+
+*) search/4 (Graph,Formula,Paths,Path)
+    -predicatul primeste ca parametri graficul Graph in care se cauta calea, formula Formula care trebuie 
+    indeplinita, lista de cai Paths obtinutaa din bfs si o variabila Path care se instantiaza la calea 
+    gasita: cea mai scurta si care respecta Formula
+    -predicatul testeaza in prima clauza daca prima cale din Paths respecta formula Formula, prin apelul
+    predicatului verify/3. In cazul in care verify intoarce true, se instantiaza Path la calea gasita si
+    nu se mai continua cautarea in a doua clauza (cut la final). In cazul in ccare verify intoarce false,
+    se continua cautarea in a doua clauza, la urmatoarea cale dint Paths
+
+*) verify/3 (Graph,Formula,Path)
+    -predicatul verifica daca calea Path din graful Graph verifica formula Formula
+    -in functie de tipul formulei (sunt 9 tipuri: atom Culoare,valid,future,global,until,next,and,or,not)
+    predicatul va apela alte predicate:
+        -daca Formula=valid, verify intoarce true intotdeauna
+        -daca Formula=Culoare, unde Culoare este un atom reprezentand o culoare, predicatul intoarce true
+        daca primul element din calea Path are culoarea Culoare si false in caz contrar
+        -daca Formula=future(Culoare), se verifica prin apelul predicatului containsC/3 daca calea Path 
+        are un element colorat cu Culoare, caz in care se intoarce true. In caz contrar, se intoarce false.
+        -daca Formula=global(Culoare), se verifica daca calea Path are toate elementele colorate cu Culoare
+        prin apelul predicatului containsGlobal/3
+        -daca Formula=until(C1,C2), se verifica daca calea Path are toate nodurile colorate cu C1, pana la
+        intalnirea unui nod colorat cu C2, prin apelul predicatului containsUntil/4, pentru care:
+            -a treia clauza spune ca primul nod trebuie sa fie colorat cu C1, dupa care se verifica predicatul
+            si pentru urmatorul element
+            -a doua clauza spune ca atunci cand primul element este colorat cu C2, predicat intoarce true si 
+            se opreste din a mai cauta alte respunsuri (cut-ul de la sfarsit)
+            -prima clauza spune ca si in cazul in care in cale a mai ramas un nod care e colorat cu C1, predicatul
+            va intoarce tot true (cazul in care in cale toate nodurile sunt colorate cu C1)
+
+*) bfs/4 (Graph,Queue,To,Paths)
+    -primeste ca parametri: graful Graph, coada Queue din care se extrage un nod, nodul destinatie To si o 
+    variabila Paths care se va instantia la lista cailor de la sursa la destinatia To, in ordinea crescatoare
+    a lungimii acestora
+    -in cazul in care coada este goala, se face matching pe prima clauza a predicatului bfs, Paths-ul primit ca
+    parametru se instantiaza la lista vida [] iar bfs intoarce true. In cazul in care coada nu este goala, se
+    extrage in variabila LastPath ultima cale din coada, se determina ultimul nod V al caii selectate (pentru a
+    se sti vecinii carui nod urmeaza sa fie vizitati) (in ambele situatii, pentru a afla ultimul element al
+    listei, am apelat predicatul lastTerm)si se apeleaza gasireSol pentru a se detrmina daca LastPath gasit
+    este o solutie sau nu (daca V=To) si a se vizita in continuare vecinii lui V, pentru a descoperi si 
+    celelalt cai de la sursa la To.
+
+*) gasireSol/6 (Graph,V,LastPath,Queue,To,Paths)
+    -verifica daca LastPath este solutie (daca V=To, se face matching pe prima clauza), caz in care se insereaza
+    calea gasita LastPath la sfarsitul listei Paths (daca exista o solutie intr-un goal-parinte, aceasta va fi
+    inserata inaintea lui LastPath in Paths, deoarece Paths=[alta_solutie|NewPath], iar LastPath se afla in
+    NewPath), dupa care se continua cu abandonare vizitarii vecinilor lui V (deoarece o viitoare solutie care
+    porneste de la o solutie ar trece de doua ori prin nodul destinatie To) si extragerea urmatoarei cai prin
+    apelul bfs/4 pe noua coada (fara LastPath) si lista de cai NewPath care trebuie instantiata
+    -in cazul in care V/=To, inseamna ca LastPath nu e solutie si se poate continua cu vizitarea vecinilor
+    ultimului nod V al caii LastPath extrase, prin apelul predicatului visit/6 cu o lista a nodurilor vizitate
+    initializata la [V]
+
+*) visit/6 (Graph,LastPath,Queue,To,Visited,Paths)
+    -instantiaza V cu ultimul nod al caii LastPath, cauta muchii de la V la un nod U, care sa nu fie in LastPath
+    si in Visited (edge(V,U,G,LastPath,Visited)). Daca gaseste o astfel de muchie, se continua prima clauza si
+    se apeleaza din nou visit/6 , marcandu-se nodul U ca fiind vizitat ([U|Visited]) si inserandu-se noua cale
+    obtinuta (vecinul U adaugat la finalul lui LastPath) in coada Queue (inserarea in coada se face la inseput
+    iar extragerea de la sfarsit) 
+    -in cazul in care nu se gaseste o muchie de la V la un nod nevizitat in timpul vizitarii drumului LastPath 
+    (lista Visited se foloseste pentru a selecta pe rand vecinii nodului V, in caz contrar s-ar selecta incontinuu
+    acelasi nod iar programul ar cicla), se trece la a doua clauza care apeleaza bfs/4, extragandu-se urmatorul
+    drum LastPath din coada Queue.
+
+    Cum algoritmul bfs se termina in momentul in care coada este goala, deci cand se ajunge la clauza: 
+    bfs(_,[],_,[]). , am pus operatorul cut la sfarsitul celorlalte clauza din: bfs/4,gasireSol/6 si visit/6, 
+    pentru a evita evaluarea de mai mule ori a unor solutii. 
+
+
+
